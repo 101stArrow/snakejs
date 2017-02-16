@@ -72,9 +72,11 @@
 				  return parseFloat(b.score) - parseFloat(a.score);
 				});
 				$('#leaderboard-holder').empty()
+				counter = 1
 				leaderboard.forEach(function(e){
+					counter++
 					$('#leaderboard-holder').append(
-						"<a class='list-group-item list-group-item-action justify-content-between' href='/user/"+e.username+"'>"+e.username+"<span class='badge badge-default badge-pill'>"+e.score+"</span></a>"
+						"<a class='list-group-item list-group-item-action justify-content-between' href='/user/"+e.username+"'>#"+counter+" "+e.username+"<span class='badge badge-default badge-pill'>"+e.score+"</span></a>"
 					)
 				})
 			});
