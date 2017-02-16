@@ -3,7 +3,7 @@ var express = require('express'),
 		low = require('lowdb'),
 		_ = require('lodash'),
 		app = express(),
-		io = require('socket.io')(3005);
+		io = require('socket.io')(3004);
 
 var PORT = 3004;
 var db = low('db.json');
