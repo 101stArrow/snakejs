@@ -27,12 +27,12 @@
 			</div>
 		</div>
 		<script src="http://code.jquery.com/jquery-3.1.1.min.js"></script>
-		<script src="http://localhost:3005/socket.io/socket.io.js"></script>
+		<script src="/socket.io/socket.io.js"></script>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.bundle.min.js"></script>
 		<script src="/js/bootstrap-notify.min.js"></script>
 		<script>
 			var socket;
-			socket = io.connect('http://localhost:3005');
+			socket = io.connect('https://snake.ericmuir.co.uk/');
 			leaderboard = []
 			liveleaderboard = []
 
