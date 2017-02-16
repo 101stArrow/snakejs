@@ -1,0 +1,245 @@
+<html>
+	<head>
+		<title>snakejs</title>
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
+		<link rel="stylesheet" href="/css/animate.css" />
+		<style>
+			canvas {
+				height: 100%;
+				width: 100%;
+			}
+			body {
+				margin: 0;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="jumbotron jumbotron-fluid animated fadeInDownBig" id="intro">
+			<div class="container">
+			  <h1 class="display-3">Welcome to SnakeJS</h1>
+			  <p class="lead">A multiplayer version of the classic game, snake</p>
+			  <hr class="my-4">
+				<div class="form-inline">
+				  <label class="sr-only" for="inlineFormInput">Username</label>
+				  <input type="text" class="form-control mb-2 mr-sm-2 mb-sm-0" id="username" placeholder="Username">
+
+				  <button type="button" class="btn btn-primary" onclick="init()">Submit</button>
+				</div>
+			</div>
+		</div>
+		<div class="jumbotron jumbotron-fluid" id="end" style="display:none;">
+			<div class="container">
+			  <h1 class="display-3">Game Over</h1>
+			  <p class="lead">You died, with a score of: <span id="score"></span></p>
+			  <hr class="my-4">
+				<p class="lead"><span id="reason"></span></p>
+			  <button type="button" class="btn btn-primary" onclick="init()">Play Again</button>
+				<button type="button" class="btn btn-primary" onclick="location.href='/leaderboard'">Leaderboard</button>
+			</div>
+		</div>
+		<canvas id="canvas" style="display:none;"></canvas>
+		<script src="http://code.jquery.com/jquery-3.1.1.min.js"></script>
+		<script src="http://localhost:3005/socket.io/socket.io.js"></script>
+		<script src="/js/bootstrap-notify.min.js"></script>
+		<script>
+			window.addEventListener( "keypress", controller, false )
+			var socket;
+			socket = io.connect('http://localhost:3005');
+
+			var canvas, ctx, frame, time = 20, gameClock, score, username, paused = false;
+			var bsize = 20, bwidth, bheight, snake, snakevx, snakevy, fruit = {};
+
+			function init(){
+				username = $('#username').val()
+
+				$('#intro').hide()
+				$('#end').hide()
+				$('#canvas').show()
+
+		    canvas = document.getElementById("canvas");
+
+		    canvas.width = document.body.clientWidth;
+		    canvas.height = document.body.clientHeight;
+		    canvasW = canvas.width;
+		    canvasH = canvas.height;
+				frame = 0;
+				score = 0;
+
+				bwidth = Math.ceil(canvas.width/bsize);
+				bheight = Math.ceil(canvas.height/bsize);
+
+				snake = {
+					head: {
+						x: Math.floor(Math.random()*bwidth),
+						y: Math.floor(Math.random()*bheight)
+					},
+					body: [
+
+					],
+					length: 0
+				}
+
+				snakevx = 1;
+				snakevy = 0
+
+				socket.emit('startgame', {
+					username: username,
+					bwidth: bwidth,
+					bheight: bheight
+				});
+
+		    if( canvas.getContext ){
+					ctx = canvas.getContext('2d');
+					gameClock = setInterval(update, time);
+		    } else {
+					alert("Your browser doesn't support HTML5 canvas. please use another browser")
+				}
+			}
+
+			function update(){
+				frame++
+				ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+				if(fruit.x == null || fruit.y == null){
+					socket.emit('getfruit', {headx: snake.head.x, heady: snake.head.y, bwidth: bwidth, bheight: bheight})
+				}
+
+				var cc = 0;
+				for(h=0;h<bheight;h++){
+					for(w=0;w<bwidth;w++){
+						cc++
+						height = h*bsize
+						width = w*bsize
+
+						if(w == 0 || w == bwidth-1 || h == 0 || h == bheight-1){
+							ctx.fillStyle = "rgb(255, 255, 0)";
+							ctx.fillRect (width, height, bsize, bsize);
+						}
+
+						ctx.strokeStyle = 'rgb(160,160,160)';
+						ctx.strokeRect (width, height, bsize, bsize);
+					}
+				}
+				// console.log(cc)
+
+				ctx.fillStyle = "rgb(0, 0, 255)";
+				ctx.fillRect (fruit.x*bsize, fruit.y*bsize, bsize, bsize);
+
+				ctx.fillText("Score: "+score, 20, 15)
+
+				drawSnake()
+
+				if(frame%30==0){
+					// console.log(frame/30)
+				}
+			}
+
+			function drawSnake(){
+				head = snake.head
+
+				if(head.x == fruit.x && head.y == fruit.y){
+					socket.emit('getfruit', {headx: snake.head.x, heady: snake.head.y, bwidth: bwidth, bheight: bheight})
+				}
+
+				ctx.fillStyle = "rgb(255, 0, 0)";
+				ctx.fillRect (head.x*bsize, head.y*bsize, bsize, bsize);
+
+				snake.body.slice(-snake.length).forEach(function(e){
+					ctx.fillStyle = "rgb(255, 0, 0)";
+					ctx.fillRect (e.x*bsize, e.y*bsize, bsize, bsize);
+					ctx.strokeStyle = 'rgb(160,160,160)';
+					ctx.strokeRect (e.x*bsize, e.y*bsize, bsize, bsize);
+					if(e.x == head.x && e.y == head.y){
+						gameOver("You Hit Yourself")
+					}
+					if(e.x == fruit.x && e.y == fruit.y){
+						socket.emit('getfruit', {headx: snake.head.x, heady: snake.head.y})
+					}
+				})
+
+				if(frame%5==0){
+					snake.body.push({
+						x: snake.head.x,
+						y: snake.head.y
+					})
+
+					snake.head.x += snakevx
+					snake.head.y += snakevy
+				}
+
+				if(head.x == 0 || head.x == bwidth-1){
+					gameOver("Hit Game Border")
+				}
+
+				if(head.y == 0 || head.y == bheight-1){
+					gameOver("Hit Game Border")
+				}
+			}
+
+			function controller(e){
+				key = e.keyCode
+				if(key == 119){ // w
+					snakevx = 0
+					snakevy = -1
+				} else if (key == 100) { // d
+					snakevx = 1
+					snakevy = 0
+				} else if (key == 97) { // a
+					snakevx = -1
+					snakevy = 0
+				} else if (key == 115) { // s
+					snakevx = 0
+					snakevy = 1
+				} else if (key == 80) { // p
+				  if (!paused){
+				    clearInterval(gameClock);
+				    paused = true;
+				  } else {
+				    gameClock = setInterval(update, time);
+				    paused = false;
+				  }
+				} else {
+					// console.log(e.keyCode)
+				}
+			}
+
+			function gameOver(reason){
+					console.log("Death by: "+reason)
+					clearInterval(gameClock)
+					ctx.clearRect(0, 0, canvas.width, canvas.height)
+					$('#end').addClass('animated fadeInDownBig');
+					$('#end').show()
+					$('#canvas').hide()
+					$('#score').html(score)
+					$('#reason').html(reason)
+					socket.emit('death',{
+						username: username,
+						status: "dead",
+						score: score,
+						time: Date.now()
+					})
+			}
+
+			socket.on('news', function (data) {
+				//news must be have title and body
+				$.notify({
+					title: data.title,
+					message: " - "+data.body
+				},{
+					type: 'info'
+				})
+			});
+
+			socket.on('fruitlocation', function (data) {
+				fruit.x = data.fruitx;
+				fruit.y = data.fruity
+			});
+
+			socket.on('score', function (data) {
+				console.log(data)
+				score = data.score;
+				snake.length = data.length
+			});
+		</script>
+	</body>
+</html>

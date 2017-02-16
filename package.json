@@ -1,0 +1,28 @@
+{
+  "name": "snakejs",
+  "version": "1.0.1",
+  "description": "Snake game in nodejs",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "author": "Eric Muir",
+  "license": "WTFPL",
+  "dependencies": {
+    "ejs": "^2.5.5",
+    "express": "^4.14.1",
+    "lodash": "^4.17.4",
+    "lowdb": "^0.15.4",
+    "socket.io": "^1.7.2"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/101stArrow/snakejs.git"
+  },
+  "bugs": {
+    "url": "https://github.com/101stArrow/snakejs/issues"
+  },
+  "homepage": "https://github.com/101stArrow/snakejs#readme"
+}

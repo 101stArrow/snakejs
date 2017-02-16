@@ -1,0 +1,123 @@
+<html>
+	<head>
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
+	</head>
+	<body>
+		<div class="container">
+			<div class="jumbotron jumbotron-fluid" style="margin: 0; padding-bottom: 1%;">
+				<div class="container">
+					<h1>Leaderboard</h1>
+				</div>
+			</div>
+			<ol class="breadcrumb" style="border-radius: 0;">
+				<li class="breadcrumb-item"><a href="/">Home</a></li>
+				<li class="breadcrumb-item">Leaderboard</li>
+			</ol>
+			<div class="row">
+				<div class="col col-md-6">
+					<h3>All time</h3>
+					<hr />
+					<div class="list-group" id="leaderboard-holder"></div>
+				</div>
+				<div class="col col-md-6">
+					<h3>Live</h3>
+					<hr />
+					<div class="list-group" id="live-leaderboard-holder"></div>
+				</div>
+			</div>
+		</div>
+		<script src="http://code.jquery.com/jquery-3.1.1.min.js"></script>
+		<script src="http://localhost:3005/socket.io/socket.io.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.bundle.min.js"></script>
+		<script src="/js/bootstrap-notify.min.js"></script>
+		<script>
+			var socket;
+			socket = io.connect('http://localhost:3005');
+			leaderboard = []
+			liveleaderboard = []
+
+			function timeSince(date) {
+
+		    var seconds = Math.floor((new Date() - date) / 1000);
+		    var interval = Math.floor(seconds / 31536000);
+
+		    if (interval > 1) {
+		        return interval + " years";
+		    }
+		    interval = Math.floor(seconds / 2592000);
+		    if (interval > 1) {
+		        return interval + " months";
+		    }
+		    interval = Math.floor(seconds / 86400);
+		    if (interval > 1) {
+		        return interval + " days";
+		    }
+		    interval = Math.floor(seconds / 3600);
+		    if (interval > 1) {
+		        return interval + " hours";
+		    }
+		    interval = Math.floor(seconds / 60);
+		    if (interval > 1) {
+		        return interval + " minutes";
+		    }
+		    return Math.floor(seconds) + " seconds";
+
+			}
+
+			socket.on('leaderboard', function (data) {
+				console.log(data)
+				leaderboard.push(data)
+				leaderboard.sort(function(a, b) {
+				  return parseFloat(b.score) - parseFloat(a.score);
+				});
+				$('#leaderboard-holder').empty()
+				leaderboard.forEach(function(e){
+					$('#leaderboard-holder').append(
+						"<a class='list-group-item list-group-item-action justify-content-between' href='/user/"+e.username+"'>"+e.username+"<span class='badge badge-default badge-pill'>"+e.score+"</span></a>"
+					)
+				})
+			});
+
+			socket.on('live-leaderboard', function (data) {
+				console.log(data)
+				if(liveleaderboard.length == 0){
+					liveleaderboard.push(data)
+				}
+				liveleaderboard.forEach(function(e){
+						if(data.username == e.username){
+							//duplicate
+							e.score = data.score
+						} else {
+							liveleaderboard.push(data)
+						}
+				})
+				liveleaderboard.sort(function(a, b) {
+				  return parseFloat(b.score) - parseFloat(a.score);
+				});
+				$('#live-leaderboard-holder').empty()
+				liveleaderboard.forEach(function(e){
+					if(e.score == -1){
+						// do nothing
+					} else {
+						$('#live-leaderboard-holder').append(
+							"<a class='list-group-item list-group-item-action justify-content-between' href='/user/"+e.username+"'>"+e.username+"<span> started "+timeSince(e.time)+" ago</span><span class='badge badge-default badge-pill'>"+e.score+"</span></a>"
+						)
+					}
+				})
+			});
+
+			socket.on('news', function (data) {
+				//news must be have title and body
+				$.notify({
+					title: data.title,
+					message: " - "+data.body
+				},{
+					type: 'info'
+				})
+			});
+
+			socket.emit('getleaderboard', {})
+
+		</script>
+	</body>
+</html>

@@ -1,0 +1,66 @@
+<head>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
+</head>
+<body>
+	<div class="container">
+		<div class="jumbotron jumbotron-fluid" style="margin: 0; padding-bottom: 1%;">
+			<div class="container">
+				<h1>Profile</h1>
+			</div>
+		</div>
+		<ol class="breadcrumb" style="border-radius: 0;">
+			<li class="breadcrumb-item"><a href="/">Home</a></li>
+			<li class="breadcrumb-item"><a href="/leaderboard">Leaderboard</a></li>
+			<li class="breadcrumb-item"><%- user.username %></li>
+		</ol>
+		<div class="card">
+		  <div class="card-block">
+		    <h4 class="card-title"><%- user.username %></h4>
+		    <p class="card-text">Games Played: <span id="played"></span></p>
+				<p class="card-text">Highscore: <%- user.highscore %></p>
+				<p class="card-text">Average: <span id="average"></span></p>
+		  </div>
+			<canvas class="card-img-bottom" id="graph">
+
+			</canvas>
+		</div>
+	</div>
+	<script src="http://code.jquery.com/jquery-3.1.1.min.js"></script>
+	<script src="http://localhost:3005/socket.io/socket.io.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.bundle.min.js"></script>
+	<script src="/js/bootstrap-notify.min.js"></script>
+	<script>
+		var ctx = $("#graph");
+		var games = <%- JSON.stringify(games) %>
+		var points = [], labels = [], total = 0;
+		games.forEach(function(e){
+			if(e.score > 0){
+				total += e.score
+				points.push(e.score)
+				labels.push(formatDate(new Date(e.time)))
+			}
+		})
+		var myChart = new Chart(ctx, {
+			type: 'line',
+			data: {
+				labels: labels,
+				datasets: [{
+					label: "Score",
+					data: points
+				}]
+			}
+		})
+		function formatDate(date) {
+		  var hours = date.getHours();
+		  var minutes = date.getMinutes();
+		  var ampm = hours >= 12 ? 'pm' : 'am';
+		  hours = hours % 12;
+		  hours = hours ? hours : 12; // the hour '0' should be '12'
+		  minutes = minutes < 10 ? '0'+minutes : minutes;
+		  var strTime = hours + ':' + minutes + ' ' + ampm;
+		  return date.getMonth()+1 + "/" + date.getDate() + "/" + date.getFullYear() + "  " + strTime;
+		}
+		$('#played').append(points.length)
+		$('#average').append(Math.round(total/points.length))
+	</script>
+</body>
